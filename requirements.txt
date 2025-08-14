@@ -1,0 +1,29 @@
+# PDF to Image Converter - Deployment Dependencies
+# This file contains the exact package versions for deployment compatibility
+# Use: pip install -r requirements-deployment.txt
+
+# Core application dependencies
+Flask==3.1.1
+Werkzeug==3.1.3
+
+# PDF processing and image manipulation
+PyMuPDF==1.26.3
+Pillow==11.3.0
+reportlab==4.4.3
+
+# System monitoring (optional, for memory usage estimation)
+psutil==7.0.0
+
+# Flask dependencies (automatically installed with Flask, but listed for clarity)
+blinker==1.9.0
+click==8.2.1
+itsdangerous==2.2.0
+Jinja2==3.1.6
+MarkupSafe==3.0.2
+
+# ReportLab dependencies
+charset-normalizer==3.4.3
+
+# Python version requirement
+# This project requires Python 3.8 or higher
+# Recommended: Python 3.11 for best performance and compatibility

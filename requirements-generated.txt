@@ -1,0 +1,12 @@
+# PDF to Image Converter - Requirements
+# Generated automatically - edit with care
+
+# Core dependencies
+Flask==3.1.1
+PyMuPDF==1.26.3
+Pillow==11.3.0
+reportlab==4.4.3
+psutil==7.0.0
+
+# Python version requirement
+# Requires Python 3.8 or higher

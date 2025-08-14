@@ -1,0 +1,6 @@
+# Minimal requirements - core packages only
+Flask==3.1.1
+PyMuPDF==1.26.3
+Pillow==11.3.0
+reportlab==4.4.3
+psutil==7.0.0

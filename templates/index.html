@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Image Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            padding: 40px;
+        }
+
+        .upload-zone {
+            border: 3px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 60px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 30px;
+            background: #f9fafb;
+        }
+
+        .upload-zone:hover {
+            border-color: #4f46e5;
+            background: #f0f4ff;
+        }
+
+        .upload-zone.dragover {
+            border-color: #4f46e5;
+            background: #e0e7ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            color: #6b7280;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2rem;
+            color: #374151;
+            margin-bottom: 10px;
+        }
+
+        .upload-subtext {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .settings-panel {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .settings-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #1f2937;
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .setting-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .setting-label {
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .setting-input {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .setting-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .quality-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quality-slider {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .quality-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4f46e5;
+            cursor: pointer;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .quality-value {
+            font-weight: 600;
+            color: #4f46e5;
+            min-width: 35px;
+        }
+
+        .convert-button {
+            width: 100%;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+        }
+
+        .convert-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .convert-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-area {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+
+        .progress-text {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #374151;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .download-area {
+            background: #ecfdf5;
+            border: 1px solid #d1fae5;
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            display: none;
+        }
+
+        .success-icon {
+            font-size: 3rem;
+            color: #059669;
+            margin-bottom: 15px;
+        }
+
+        .download-info {
+            margin-bottom: 20px;
+        }
+
+        .download-info h3 {
+            color: #065f46;
+            margin-bottom: 10px;
+        }
+
+        .file-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .file-stat {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #d1fae5;
+        }
+
+        .file-stat-label {
+            font-size: 0.8rem;
+            color: #065f46;
+            font-weight: 500;
+        }
+
+        .file-stat-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #059669;
+        }
+
+        .download-button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .download-button:hover {
+            background: #047857;
+            transform: translateY(-1px);
+        }
+
+        .error-area {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            padding: 20px;
+            color: #dc2626;
+            text-align: center;
+            display: none;
+        }
+
+        .error-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .reset-button {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .reset-button:hover {
+            background: #4b5563;
+        }
+
+        @media (max-width: 640px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .upload-zone {
+                padding: 40px 15px;
+            }
+            
+            .settings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PDF to Image Converter</h1>
+            <p>Transform your PDFs into image-based documents with custom quality settings</p>
+        </div>
+        
+        <div class="main-content">
+            <!-- File Upload Zone -->
+            <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Drop PDF or Click to Upload</div>
+                <div class="upload-subtext">Maximum file size: 50MB</div>
+                <input type="file" id="file-input" accept=".pdf" />
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="settings-panel">
+                <div class="settings-title">Optional Settings</div>
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <label class="setting-label">DPI (Resolution)</label>
+                        <select id="dpi-select" class="setting-input">
+                            <option value="72">72 DPI (Small file, basic quality)</option>
+                            <option value="150" selected>150 DPI (Balanced quality)</option>
+                            <option value="300">300 DPI (High quality, larger file)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group">
+                        <label class="setting-label">Image Format</label>
+                        <select id="format-select" class="setting-input">
+                            <option value="JPEG" selected>JPEG (Smaller files)</option>
+                            <option value="PNG">PNG (Best quality)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="setting-group" id="quality-group">
+                        <label class="setting-label">JPEG Quality</label>
+                        <div class="quality-container">
+                            <input type="range" id="quality-slider" class="quality-slider" min="1" max="100" value="85">
+                            <span class="quality-value" id="quality-value">85%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Convert Button -->
+            <button class="convert-button" id="convert-button" disabled>
+                Convert to Image-PDF
+            </button>
+
+            <!-- Progress Area -->
+            <div class="progress-area" id="progress-area">
+                <div class="progress-text" id="progress-text">Processing your PDF...</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+            </div>
+
+            <!-- Download Area -->
+            <div class="download-area" id="download-area">
+                <div class="success-icon">✅</div>
+                <div class="download-info">
+                    <h3>Conversion Complete!</h3>
+                    <p>Your PDF has been successfully converted to an image-based PDF.</p>
+                </div>
+                
+                <div class="file-stats" id="file-stats">
+                    <!-- Stats will be populated by JavaScript -->
+                </div>
+                
+                <button class="download-button" id="download-button">
+                    Download PDF
+                </button>
+                
+                <button class="reset-button" onclick="resetForm()">
+                    Convert Another File
+                </button>
+            </div>
+
+            <!-- Error Area -->
+            <div class="error-area" id="error-area">
+                <div class="error-icon">❌</div>
+                <div id="error-message">An error occurred during conversion.</div>
+                <button class="reset-button" onclick="resetForm()">
+                    Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let convertedFileInfo = null;
+
+        // DOM elements
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const convertButton = document.getElementById('convert-button');
+        const progressArea = document.getElementById('progress-area');
+        const downloadArea = document.getElementById('download-area');
+        const errorArea = document.getElementById('error-area');
+        const qualitySlider = document.getElementById('quality-slider');
+        const qualityValue = document.getElementById('quality-value');
+        const formatSelect = document.getElementById('format-select');
+        const qualityGroup = document.getElementById('quality-group');
+
+        // Quality slider functionality
+        qualitySlider.addEventListener('input', function() {
+            qualityValue.textContent = this.value + '%';
+        });
+
+        // Format change handler
+        formatSelect.addEventListener('change', function() {
+            qualityGroup.style.display = this.value === 'JPEG' ? 'flex' : 'none';
+        });
+
+        // File input change handler
+        fileInput.addEventListener('change', function(e) {
+            handleFileSelect(e.target.files[0]);
+        });
+
+        // Drag and drop functionality
+        uploadZone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            if (!file) return;
+
+            if (file.type !== 'application/pdf') {
+                showError('Please select a PDF file.');
+                return;
+            }
+
+            if (file.size > 50 * 1024 * 1024) { // 50MB
+                showError('File too large. Maximum size is 50MB.');
+                return;
+            }
+
+            selectedFile = file;
+            convertButton.disabled = false;
+            
+            // Update upload zone to show selected file
+            uploadZone.innerHTML = `
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Selected: ${file.name}</div>
+                <div class="upload-subtext">Click to select a different file</div>
+            `;
+        }
+
+        // Convert button handler
+        convertButton.addEventListener('click', function() {
+            if (!selectedFile) return;
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('dpi', document.getElementById('dpi-select').value);
+            formData.append('format', document.getElementById('format-select').value);
+            formData.append('quality', document.getElementById('quality-slider').value);
+
+            // Show progress
+            showProgress();
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    convertedFileInfo = data;
+                    showDownload(data);
+                } else {
+                    showError(data.error || 'Conversion failed');
+                }
+            })
+            .catch(error => {
+                showError('Network error: ' + error.message);
+            });
+        });
+
+        function showProgress() {
+            hideAllAreas();
+            progressArea.style.display = 'block';
+            
+            // Simulate progress
+            let progress = 0;
+            const progressFill = document.getElementById('progress-fill');
+            const progressText = document.getElementById('progress-text');
+            
+            const interval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress > 90) progress = 90;
+                
+                progressFill.style.width = progress + '%';
+                
+                if (progress < 30) {
+                    progressText.textContent = 'Reading PDF file...';
+                } else if (progress < 60) {
+                    progressText.textContent = 'Converting pages to images...';
+                } else {
+                    progressText.textContent = 'Creating new PDF...';
+                }
+            }, 200);
+
+            // Store interval ID to clear it later
+            progressArea.dataset.intervalId = interval;
+        }
+
+        function showDownload(data) {
+            // Clear progress interval
+            if (progressArea.dataset.intervalId) {
+                clearInterval(parseInt(progressArea.dataset.intervalId));
+            }
+
+            hideAllAreas();
+            downloadArea.style.display = 'block';
+
+            // Update file stats
+            const fileStats = document.getElementById('file-stats');
+            const qualityInfo = data.settings.quality ? ` (${data.settings.quality}% quality)` : '';
+            
+            fileStats.innerHTML = `
+                <div class="file-stat">
+                    <div class="file-stat-label">Original Size</div>
+                    <div class="file-stat-value">${data.original_size}</div>
+                </div>
+                <div class="file-stat">
+                    <div class="file-stat-label">Converted Size</div>
+                    <div class="file-stat-value">${data.converted_size}</div>
+                </div>
+                <div class="file-stat">
+                    <div class="file-stat-label">Format</div>
+                    <div class="file-stat-value">${data.settings.format}${qualityInfo}</div>
+                </div>
+                <div class="file-stat">
+                    <div class="file-stat-label">Resolution</div>
+                    <div class="file-stat-value">${data.settings.dpi} DPI</div>
+                </div>
+            `;
+
+            // Set up download button
+            const downloadButton = document.getElementById('download-button');
+            downloadButton.onclick = function() {
+                window.location.href = `/download/${data.file_id}/${data.filename}`;
+                
+                // Clean up file after download (with delay)
+                setTimeout(() => {
+                    fetch(`/cleanup/${data.file_id}/${data.filename}`, {
+                        method: 'POST'
+                    });
+                }, 5000);
+            };
+        }
+
+        function showError(message) {
+            // Clear progress interval
+            if (progressArea.dataset.intervalId) {
+                clearInterval(parseInt(progressArea.dataset.intervalId));
+            }
+
+            hideAllAreas();
+            errorArea.style.display = 'block';
+            document.getElementById('error-message').textContent = message;
+        }
+
+        function hideAllAreas() {
+            progressArea.style.display = 'none';
+            downloadArea.style.display = 'none';
+            errorArea.style.display = 'none';
+        }
+
+        function resetForm() {
+            selectedFile = null;
+            convertedFileInfo = null;
+            convertButton.disabled = true;
+            hideAllAreas();
+            
+            // Reset upload zone
+            uploadZone.innerHTML = `
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Drop PDF or Click to Upload</div>
+                <div class="upload-subtext">Maximum file size: 50MB</div>
+            `;
+            
+            // Reset file input
+            fileInput.value = '';
+        }
+
+        // Initialize quality group visibility
+        qualityGroup.style.display = formatSelect.value === 'JPEG' ? 'flex' : 'none';
+    </script>
+</body>
+</html>
