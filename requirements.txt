@@ -24,6 +24,7 @@ MarkupSafe==3.0.2
 # ReportLab dependencies
 charset-normalizer==3.4.3
 gunicorn>=21.2
+uvicorn[standard]>=0.30
 
 # Python version requirement
 # This project requires Python 3.8 or higher
